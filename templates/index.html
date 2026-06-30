@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF Chatbot</title>
+</head>
+
+<body>
+
+<h1>PDF Chatbot</h1>
+
+<form id="uploadForm">
+
+    <input type="file" id="pdfFile">
+
+    <button type="submit">
+        Upload
+    </button>
+
+</form>
+
+<h2>Uploaded Documents</h2>
+
+<ul id="documents"></ul>
+
+<hr>
+
+<h2>Ask a Question</h2>
+
+<input
+    type="text"
+    id="question"
+    placeholder="Ask something..."
+>
+
+<button id="askBtn">
+    Ask
+</button>
+
+<pre id="answer"></pre>
+
+<pre id="result"></pre>
+
+<script>
+
+document
+.getElementById("uploadForm")
+.addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    const file =
+    document.getElementById("pdfFile").files[0];
+
+    const formData = new FormData();
+
+    formData.append("file", file);
+
+    const response = await fetch(
+        "/upload",
+        {
+            method: "POST",
+            body: formData
+        }
+    );
+
+    const data = await response.json();
+
+    document.getElementById("result").textContent =
+        JSON.stringify(data, null, 2);
+
+});
+
+document
+.getElementById("askBtn")
+.addEventListener("click", async () => {
+    const question = document.getElementById("question").value;
+
+    const response = await fetch(
+        "/ask",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ question })
+        }
+    );
+
+    const data = await response.json();
+
+    let sourceText = "";
+    for(const source of data.sources) {
+        sourceText += `${source.document} (Page ${source.page})\n`;
+    }
+
+    document.getElementById("answer").textContent = data.answer + "\n\nSources:\n" + sourceText;
+});
+
+async function loadDocuments(){
+    const response = await fetch("/documents");
+
+    const data = await response.json();
+
+    const list = document.getElementById("documents");
+
+    list.innerHTML = "";
+
+    for(const doc of data.documents){
+        const li = document.createElement("li");
+        li.textContent = doc;
+        list.appendChild(li);
+    }
+}
+loadDocuments();
+
+</script>
+
+</body>
+</html>
