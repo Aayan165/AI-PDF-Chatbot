@@ -1,119 +1,686 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF Chatbot</title>
+    <style>
+        :root {
+            --bg: #050816;
+            --panel: rgba(12, 18, 38, 0.78);
+            --panel-strong: rgba(10, 14, 28, 0.92);
+            --line: rgba(141, 162, 255, 0.18);
+            --text: #f4f7ff;
+            --muted: #a6b0d9;
+            --purple: #9b5cff;
+            --blue: #4f9dff;
+            --cyan: #4fe7ff;
+            --shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+            --radius-xl: 30px;
+            --radius-lg: 22px;
+            --radius-md: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(155, 92, 255, 0.32), transparent 35%),
+                radial-gradient(circle at top right, rgba(79, 157, 255, 0.28), transparent 34%),
+                radial-gradient(circle at bottom center, rgba(79, 231, 255, 0.12), transparent 28%),
+                linear-gradient(135deg, #04060f 0%, #091225 45%, #050816 100%);
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 54px 54px;
+            mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+            opacity: 0.35;
+        }
+
+        .app-shell {
+            position: relative;
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 36px;
+            background: linear-gradient(180deg, rgba(18, 25, 50, 0.88), rgba(7, 10, 20, 0.82));
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(18px);
+            padding: 28px;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            inset: -2px;
+            border-radius: inherit;
+            padding: 2px;
+            background: linear-gradient(135deg, rgba(155,92,255,0.85), rgba(79,157,255,0.85), rgba(79,231,255,0.55));
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .hero-grid {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 24px;
+            align-items: stretch;
+        }
+
+        .brand {
+            padding: 8px 0 0;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            font-size: 0.72rem;
+            margin-bottom: 14px;
+        }
+
+        .eyebrow::before {
+            content: "";
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, var(--purple), var(--blue));
+            box-shadow: 0 0 18px rgba(155, 92, 255, 0.7);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(2.4rem, 4vw, 4.8rem);
+            line-height: 0.94;
+            letter-spacing: -0.05em;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #f6f8ff 10%, #a98cff 35%, #5fa0ff 62%, #56e2ff 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .subtitle {
+            max-width: 62ch;
+            color: var(--muted);
+            font-size: 1.02rem;
+            line-height: 1.7;
+            margin: 16px 0 0;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .stat-card,
+        .panel,
+        .bubble,
+        .source-card {
+            border: 1px solid rgba(151, 171, 255, 0.14);
+            background: rgba(10, 15, 29, 0.72);
+            backdrop-filter: blur(14px);
+        }
+
+        .stat-card {
+            border-radius: 20px;
+            padding: 16px;
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .stat-label {
+            display: block;
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .panel {
+            border-radius: 28px;
+            padding: 20px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+        }
+
+        .panel h2 {
+            margin: 0 0 14px;
+            font-size: 1.1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .upload-area {
+            display: grid;
+            gap: 14px;
+        }
+
+        .file-input {
+            width: 100%;
+            padding: 16px;
+            border-radius: 18px;
+            border: 1px dashed rgba(151, 171, 255, 0.35);
+            background: rgba(255,255,255,0.02);
+            color: var(--muted);
+        }
+
+        .button-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            appearance: none;
+            border: none;
+            cursor: pointer;
+            font: inherit;
+            font-weight: 700;
+            color: #fff;
+            border-radius: 16px;
+            padding: 14px 20px;
+            transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease, background 180ms ease;
+        }
+
+        .primary-btn {
+            background: linear-gradient(135deg, var(--purple), var(--blue));
+            box-shadow: 0 16px 30px rgba(79, 157, 255, 0.22);
+        }
+
+        .secondary-btn {
+            background: linear-gradient(135deg, rgba(155, 92, 255, 0.22), rgba(79, 157, 255, 0.18));
+            border: 1px solid rgba(151, 171, 255, 0.22);
+        }
+
+        button:hover {
+            transform: translateY(-2px) scale(1.01);
+            filter: brightness(1.08);
+            box-shadow: 0 18px 36px rgba(79, 157, 255, 0.26);
+        }
+
+        button:active {
+            transform: translateY(0) scale(0.99);
+        }
+
+        button:focus-visible,
+        input:focus-visible {
+            outline: 2px solid rgba(79, 231, 255, 0.8);
+            outline-offset: 3px;
+        }
+
+        .workspace {
+            margin-top: 24px;
+            display: grid;
+            grid-template-columns: 300px minmax(0, 1fr);
+            gap: 24px;
+        }
+
+        .documents-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            gap: 10px;
+        }
+
+        .documents-list li {
+            padding: 14px 16px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.03);
+            color: var(--text);
+            border: 1px solid rgba(151, 171, 255, 0.1);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .chat-card {
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            min-height: 640px;
+        }
+
+        .chat-thread {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 6px 2px 18px;
+            overflow-y: auto;
+            max-height: 470px;
+            scroll-behavior: smooth;
+        }
+
+        .chat-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            color: var(--muted);
+            font-size: 0.92rem;
+            margin-bottom: 14px;
+        }
+
+        .bubble {
+            border-radius: 22px;
+            padding: 16px 18px;
+            max-width: min(82%, 620px);
+            line-height: 1.65;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+        }
+
+        .bubble.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, rgba(155, 92, 255, 0.24), rgba(79, 157, 255, 0.18));
+            border-top-right-radius: 10px;
+        }
+
+        .bubble.assistant {
+            align-self: flex-start;
+            background: rgba(12, 18, 38, 0.92);
+            border-top-left-radius: 10px;
+        }
+
+        .bubble .speaker {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: #b8c3ff;
+        }
+
+        .bubble .content {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .composer {
+            margin-top: 16px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .composer-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+        }
+
+        .composer input,
+        .file-input {
+            width: 100%;
+            border-radius: 18px;
+            border: 1px solid rgba(151, 171, 255, 0.16);
+            background: rgba(255,255,255,0.03);
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .composer input {
+            padding: 16px 18px;
+        }
+
+        .composer input::placeholder {
+            color: #8190bf;
+        }
+
+        .source-card {
+            margin-top: 14px;
+            border-radius: 20px;
+            padding: 16px;
+            color: var(--muted);
+        }
+
+        .source-card strong {
+            color: var(--text);
+        }
+
+        .result-log {
+            display: none;
+        }
+
+        .empty-state {
+            display: grid;
+            place-items: center;
+            min-height: 260px;
+            border: 1px dashed rgba(151, 171, 255, 0.18);
+            border-radius: 24px;
+            color: var(--muted);
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+            padding: 24px;
+            text-align: center;
+        }
+
+        .empty-state strong {
+            display: block;
+            font-size: 1.1rem;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 980px) {
+            .hero-grid,
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+
+            .chat-card {
+                min-height: auto;
+            }
+
+            .chat-thread {
+                max-height: 420px;
+            }
+        }
+
+        @media (max-width: 720px) {
+            .app-shell {
+                padding: 16px;
+            }
+
+            .hero {
+                padding: 18px;
+                border-radius: 28px;
+            }
+
+            .panel {
+                padding: 16px;
+                border-radius: 22px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .composer-row,
+            .button-row {
+                grid-template-columns: 1fr;
+                flex-direction: column;
+            }
+
+            .bubble {
+                max-width: 94%;
+            }
+        }
+    </style>
 </head>
-
 <body>
+    <main class="app-shell">
+        <section class="hero">
+            <div class="hero-grid">
+                <div class="brand">
+                    <div class="eyebrow">Gemini-inspired PDF assistant</div>
+                    <h1><span class="gradient-text">Chat with your PDFs</span></h1>
+                    <p class="subtitle">
+                        Upload a document, ask a question, and read the answer in a clean two-person chat layout.
+                        The purple-and-blue gradient theme is built to feel closer to the Gemini visual style.
+                    </p>
 
-<h1>PDF Chatbot</h1>
+                    <div class="stats">
+                        <div class="stat-card">
+                            <span class="stat-number">1</span>
+                            <span class="stat-label">Upload a PDF</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-number">2</span>
+                            <span class="stat-label">Ask naturally</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-number">3</span>
+                            <span class="stat-label">See a chat-style reply</span>
+                        </div>
+                    </div>
+                </div>
 
-<form id="uploadForm">
+                <div class="panel">
+                    <h2>Upload Document</h2>
+                    <form id="uploadForm" class="upload-area">
+                        <input type="file" id="pdfFile" class="file-input" accept="application/pdf">
+                        <div class="button-row">
+                            <button type="submit" class="primary-btn">Upload PDF</button>
+                            <button type="button" id="clearChatBtn" class="secondary-btn">Clear Chat</button>
+                        </div>
+                    </form>
+                    <div class="source-card" id="uploadStatus">
+                        <strong>Status:</strong> Ready to upload a PDF.
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <input type="file" id="pdfFile">
+        <section class="workspace">
+            <aside class="panel">
+                <h2>Uploaded Documents</h2>
+                <ul id="documents" class="documents-list"></ul>
+            </aside>
 
-    <button type="submit">
-        Upload
-    </button>
+            <section class="panel chat-card">
+                <div>
+                    <h2>Conversation</h2>
+                    <div class="chat-meta">
+                        <span>Two-person style: you on the right, assistant on the left.</span>
+                        <span id="chatCount">0 messages</span>
+                    </div>
+                </div>
 
-</form>
+                <div id="chatThread" class="chat-thread">
+                    <div class="empty-state" id="emptyState">
+                        <div>
+                            <strong>Your conversation will appear here.</strong>
+                            Upload a PDF, then ask something about it to start the chat.
+                        </div>
+                    </div>
+                </div>
 
-<h2>Uploaded Documents</h2>
+                <div class="composer">
+                    <div class="composer-row">
+                        <input
+                            type="text"
+                            id="question"
+                            placeholder="Ask about the uploaded PDF..."
+                        >
+                        <button id="askBtn" class="primary-btn" type="button">Send</button>
+                    </div>
+                    <div class="source-card result-log" id="result"></div>
+                </div>
+            </section>
+        </section>
+    </main>
 
-<ul id="documents"></ul>
+    <script>
+        const chatThread = document.getElementById("chatThread");
+        const emptyState = document.getElementById("emptyState");
+        const chatCount = document.getElementById("chatCount");
+        const uploadStatus = document.getElementById("uploadStatus");
 
-<hr>
-
-<h2>Ask a Question</h2>
-
-<input
-    type="text"
-    id="question"
-    placeholder="Ask something..."
->
-
-<button id="askBtn">
-    Ask
-</button>
-
-<pre id="answer"></pre>
-
-<pre id="result"></pre>
-
-<script>
-
-document
-.getElementById("uploadForm")
-.addEventListener("submit", async (e) => {
-
-    e.preventDefault();
-
-    const file =
-    document.getElementById("pdfFile").files[0];
-
-    const formData = new FormData();
-
-    formData.append("file", file);
-
-    const response = await fetch(
-        "/upload",
-        {
-            method: "POST",
-            body: formData
+        function updateChatCount() {
+            const bubbleCount = chatThread.querySelectorAll(".bubble").length;
+            chatCount.textContent = `${bubbleCount} message${bubbleCount === 1 ? "" : "s"}`;
+            if (bubbleCount > 0 && emptyState) {
+                emptyState.style.display = "none";
+            }
         }
-    );
 
-    const data = await response.json();
+        function addBubble(role, message, sources = "") {
+            if (emptyState) {
+                emptyState.style.display = "none";
+            }
 
-    document.getElementById("result").textContent =
-        JSON.stringify(data, null, 2);
+            const bubble = document.createElement("div");
+            bubble.className = `bubble ${role}`;
 
-});
+            const speaker = document.createElement("span");
+            speaker.className = "speaker";
+            speaker.textContent = role === "user" ? "You" : "Assistant";
 
-document
-.getElementById("askBtn")
-.addEventListener("click", async () => {
-    const question = document.getElementById("question").value;
+            const content = document.createElement("div");
+            content.className = "content";
+            content.textContent = message;
 
-    const response = await fetch(
-        "/ask",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ question })
+            bubble.appendChild(speaker);
+            bubble.appendChild(content);
+
+            if (sources) {
+                const sourceBlock = document.createElement("div");
+                sourceBlock.className = "source-card";
+                sourceBlock.style.marginTop = "12px";
+                sourceBlock.style.padding = "12px 14px";
+                const sourceTitle = document.createElement("strong");
+                sourceTitle.textContent = "Sources";
+                const sourceLines = document.createElement("div");
+                sourceLines.style.marginTop = "6px";
+                sourceLines.style.whiteSpace = "pre-wrap";
+                sourceLines.textContent = sources;
+                sourceBlock.appendChild(sourceTitle);
+                sourceBlock.appendChild(sourceLines);
+                bubble.appendChild(sourceBlock);
+            }
+
+            chatThread.appendChild(bubble);
+            chatThread.scrollTop = chatThread.scrollHeight;
+            updateChatCount();
         }
-    );
 
-    const data = await response.json();
+        document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
 
-    let sourceText = "";
-    for(const source of data.sources) {
-        sourceText += `${source.document} (Page ${source.page})\n`;
-    }
+            const file = document.getElementById("pdfFile").files[0];
 
-    document.getElementById("answer").textContent = data.answer + "\n\nSources:\n" + sourceText;
-});
+            if (!file) {
+                uploadStatus.innerHTML = "<strong>Status:</strong> Please select a PDF before uploading.";
+                return;
+            }
 
-async function loadDocuments(){
-    const response = await fetch("/documents");
+            const formData = new FormData();
+            formData.append("file", file);
 
-    const data = await response.json();
+            uploadStatus.innerHTML = "<strong>Status:</strong> Uploading and indexing document...";
 
-    const list = document.getElementById("documents");
+            const response = await fetch("/upload", {
+                method: "POST",
+                body: formData
+            });
 
-    list.innerHTML = "";
+            const data = await response.json();
 
-    for(const doc of data.documents){
-        const li = document.createElement("li");
-        li.textContent = doc;
-        list.appendChild(li);
-    }
-}
-loadDocuments();
+            uploadStatus.innerHTML = `
+                <strong>Status:</strong> Uploaded <strong>${data.filename}</strong><br>
+                ${data.characters} characters processed, ${data.chunks_created} chunks created.
+            `;
 
-</script>
+            await loadDocuments();
+        });
 
+        document.getElementById("askBtn").addEventListener("click", askQuestion);
+        document.getElementById("question").addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                askQuestion();
+            }
+        });
+
+        document.getElementById("clearChatBtn").addEventListener("click", () => {
+            chatThread.innerHTML = "";
+            chatThread.appendChild(emptyState);
+            emptyState.style.display = "grid";
+            updateChatCount();
+        });
+
+        async function askQuestion() {
+            const questionInput = document.getElementById("question");
+            const question = questionInput.value.trim();
+
+            if (!question) {
+                return;
+            }
+
+            addBubble("user", question);
+            questionInput.value = "";
+
+            const loadingBubble = document.createElement("div");
+            loadingBubble.className = "bubble assistant";
+            loadingBubble.id = "loadingBubble";
+            loadingBubble.innerHTML = `
+                <span class="speaker">Assistant</span>
+                <div class="content">Thinking...</div>
+            `;
+            chatThread.appendChild(loadingBubble);
+            chatThread.scrollTop = chatThread.scrollHeight;
+
+            const response = await fetch("/ask", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ question })
+            });
+
+            const data = await response.json();
+
+            loadingBubble.remove();
+
+            const sourceText = (data.sources || [])
+                .map((source) => `${source.document} (Page ${source.page})`)
+                .join("\n");
+
+            addBubble("assistant", data.answer || "No answer returned.", sourceText);
+        }
+
+        async function loadDocuments() {
+            const response = await fetch("/documents");
+            const data = await response.json();
+            const list = document.getElementById("documents");
+
+            list.innerHTML = "";
+
+            if (!data.documents || data.documents.length === 0) {
+                const li = document.createElement("li");
+                li.textContent = "No documents uploaded yet.";
+                list.appendChild(li);
+                return;
+            }
+
+            for (const doc of data.documents) {
+                const li = document.createElement("li");
+                li.textContent = doc;
+                list.appendChild(li);
+            }
+        }
+
+        loadDocuments();
+        updateChatCount();
+    </script>
 </body>
 </html>
