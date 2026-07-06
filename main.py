@@ -1,3 +1,4 @@
+import utils.session
 from rag import chunk_text
 from qdrant_manager import (
     create_collection,
